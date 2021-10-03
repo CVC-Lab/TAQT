@@ -1,0 +1,3 @@
+disjointset.o disjointset.o: disjointset.cpp disjointset.h
+
+disjointset.h:

@@ -1,0 +1,27 @@
+------------------------------------------------
+|        TAQT                                  |
+------------------------------------------------
+Alex R. -- arand@ices.utexas.edu -- 3/15/2012
+
+This code was converted to the cmake template on 3/15/2012.
+
+Old readme info is below:
+
+The executable file is "match" in the bin directory. To run:
+
+match <mol density file 1> <mol density file 2> <min density val> <max density val> <mol potential file 1> <mol potential file 2>
+
+The density and potential files are in .rawiv format, which can be converted from .dx file using dx2rawiv in the bin directory. 
+The output is the similarity score between the two molecules. 
+
+When the program executes, it writes out two temporary files for each molecule: 
+.ctr file for the contour tree and .dct file for the dual contour tree. 
+Those files are used for future fast comparison of the molecule. 
+The .ctr file is for the entire volume and should not change unless you update the data for the molecule. 
+The .dct file is range specific. If you want to try the match with a different range, you should delete the .dct files.
+
+To compile the program, type 
+
+make
+make install   
+
