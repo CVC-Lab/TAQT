@@ -1,0 +1,276 @@
+#include <stdio.h>
+#include <assert.h>
+#include <iostream>
+#include <fstream>
+
+#include <time.h>
+#ifdef _WIN32
+         #include <sys/types.h>
+         #include <sys/timeb.h>
+#else
+         #include <sys/time.h>
+#endif
+
+#include <betti.h>
+
+using namespace std;
+
+float sim_w[6];
+
+//Get the current time in seconds as a double value 
+double getTime()
+{
+	#ifdef _WIN32
+		 time_t ltime;
+		 _timeb tstruct;
+		 time( &ltime );
+		 _ftime( &tstruct );
+		 return (double) (ltime + 1e-3*(tstruct.millitm));
+	#else
+		 struct timeval t;
+		 gettimeofday( &t, NULL );
+		 return (double)(t.tv_sec + 1e-6*t.tv_usec);
+	#endif
+}
+
+MultiConTree* buildMultiCon(const char* fname, int level, int dim[3], const char* potfile, float gmin, 
+							float gmax, VolumeReg3Critical* &p_vol);
+
+int main(int argc, char *argv[])
+{
+	if ( argc < 3 ) {
+		fprintf( stderr, "Wrong arguments.\n" );
+		fprintf( stderr, "Usage: %s <data file 1> <data file 2> [<fmin> <fmax> <pot file 1> <pot file 2>] \n", argv[0]);
+		return( 1 );
+	}
+
+	double start, end;
+	start = getTime();
+	
+	sim_w[0] = 0.03;
+	sim_w[1] = 0.08;
+	sim_w[2] = 0.44;
+	sim_w[3] = 0.21;
+	sim_w[4] = 0.1;
+	sim_w[5] = 0.14;
+	
+
+	int dim[3] = {8, 8, 8};
+	int level = 16;
+	printf("matching %s %s\n", argv[1], argv[2]);
+
+	char *pfile1 = NULL, *pfile2 = NULL;
+	float gmin = 1, gmax = -1;
+	if (argc > 4) {
+		gmin = atof(argv[3]);
+		gmax = atof(argv[4]);
+	}
+
+	if (argc > 6) {
+		pfile1 = argv[5];
+		pfile2 = argv[6];
+	} else {
+		sim_w[0] = 0.5;
+		sim_w[1] = 0.5;
+		sim_w[2] = 0;
+		sim_w[3] = 0;
+		sim_w[4] = 0;
+		sim_w[5] = 0;
+	}
+
+	if(argc > 12) {
+		for(int i = 0; i < 6; i++) {
+			sim_w[i] = atof(argv[i+7]);
+		}
+	}
+	
+	VolumeReg3Critical *p_vol1, *p_vol2;
+	MultiConTree *multicon1 = buildMultiCon(argv[1], level, dim, pfile1, gmin, gmax, p_vol1);
+	MultiConTree *multicon2 = buildMultiCon(argv[2], level, dim, pfile2, gmin, gmax, p_vol2);
+
+	float score = multicon1->matching(multicon2);
+	printf("matching score = %f\n", score);
+	FILE *fp;
+	if(argc > 13) {
+		fp = fopen(argv[13], "w");
+	} else {
+		fp = fopen("score", "w");
+	}
+	fprintf(fp, "%f", score);
+	fclose(fp);
+
+	end = getTime();
+	//float t = end.tv_sec-start.tv_sec + (end.tv_usec-start.tv_usec)/1000000.0f;
+	fprintf(stderr, "\nelapsed time = %f seconds\n", end-start);
+	
+	/* float *c1 = fvector(0, 2);
+	float *c2 = fvector(0, 2);
+	float **ax1 = matrix(0, 2, 0, 2);
+	float **ax2 = matrix(0, 2, 0, 2);
+	multicon1->getOrientation(0, 0, c1, ax1);
+	multicon2->getOrientation(0, 0, c2, ax2);
+
+	printf("c1 = (%f, %f, %f), c2 = (%f %f %f)\n", c1[0], c1[1], c1[2], c2[0], c2[1], c2[2]);
+	for (int i = 0; i < 3; i++) {
+		printf("R1: 	%f\t%f\t%f\n", ax1[i][0], ax1[i][1], ax1[i][2]);
+	}
+	for (int i = 0; i < 3; i++) {
+		printf("R2: 	%f\t%f\t%f\n", ax2[i][0], ax2[i][1], ax2[i][2]);
+	} */
+
+	/*double PI = 3.1415926;
+	float cx = 0;
+	float **mtx = matrix(0, 2, 0, 2);
+	int RES = 40;
+	for (int i = 0; i <= RES; i++) {
+		for (int j = 0; j <= RES; j++) {
+			for (int k = 0; k <= RES; k++) {
+				float s = i / ((float)RES);
+				float t1 = 2*PI*j/RES;
+				float t2 = 2*PI*k/RES;
+				float d1 = sqrt(1-s);
+				float d2 = sqrt(s);
+				float w = cos(t2)*d2;
+				float x = sin(t1)*d1;
+				float y = cos(t1)*d1;
+				float z = sin(t2)*d2;
+				float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2; 
+
+				// calculate coefficients
+				x2 = x + x; y2 = y + y; 
+				z2 = z + z;
+				xx = x * x2; xy = x * y2; xz = x * z2;
+				yy = y * y2; yz = y * z2; zz = z * z2;
+				wx = w * x2; wy = w * y2; wz = w * z2;
+
+				ax2[0][0] = 1.0 - (yy + zz); 
+				ax2[0][1] = xy - wz;
+				ax2[0][2] = xz + wy; 
+				ax2[1][0] = xy + wz; 
+				ax2[1][1] = 1.0 - (xx + zz);
+				ax2[1][2] = yz - wx; 
+				ax2[2][0] = xz - wy; 
+				ax2[2][1] = yz + wx;
+				ax2[2][2] = 1.0 - (xx + yy); 
+
+				float carbo = CarboIndex(*p_vol1, ax1, c1, *p_vol2, ax2, c2);
+				if( carbo > cx) {
+					cx = carbo;
+					for(int ii = 0; ii < 3; ii++) {
+						for(int jj = 0; jj < 3; jj++) {
+							mtx[ii][jj] = ax2[ii][jj];
+						}
+					}
+				}
+			}
+		}
+	}
+	printf("largest carbo index = %.8f\n", cx);
+	for(int i = 0; i < 3; i++) {
+		printf("%f\t%f\t%f\n", mtx[i][0], mtx[i][1], mtx[i][2]);
+	}
+	free_matrix(mtx, 0, 2, 0, 2);*/
+
+	delete multicon1;
+	delete multicon2;
+	delete p_vol1;
+	delete p_vol2;
+
+	return 0;
+}
+
+MultiConTree* buildMultiCon(const char* fname, int level, int dim[3], 
+							const char* potfile, float gmin, float gmax, 
+							VolumeReg3Critical* &p_vol) {
+	// read the first data
+	Reg3Data* p_fun = NULL;
+	Reg3Data* p_pot = NULL;
+	p_vol = NULL;
+
+	char ctree_fname[256], dual_fname[256];
+	AugmentedContourTree *p_actree = NULL;
+	sprintf(ctree_fname, "%s.ctr\0", fname);
+	sprintf(dual_fname, "%s.dct\0", fname);
+
+	FILE *fp, *dfp;
+	DualGraph *dual;
+	float global_min, global_max;
+
+	printf("\nDual contour tree of %s\n", fname);
+
+	p_fun = new Reg3Data(fname, dim);
+	if (gmin < gmax) {
+		global_min = gmin;
+		global_max = gmax;
+	} else {
+		float min, max;
+		p_fun->getFuncMinMax(min, max);
+		global_min = min + 0.000001;
+		global_max = max + 0.000001;
+	}
+	printf("fmin = %f, fmax = %f\n", global_min, global_max);
+
+	DualNode::setGlobalMinMax(global_min, global_max);
+
+	p_fun = new Reg3Data(fname, dim);
+	if (potfile) {
+			p_pot = new Reg3Data(potfile, dim);
+	} else {
+		p_pot = new Reg3Data(fname, dim);
+		for(int i = 0; i < p_pot->getNVerts(); i++) {
+			p_pot->setValue(i, 1.0f);
+		} 
+	}
+	p_vol = new VolumeReg3Critical(p_fun, p_pot);
+					 
+	dual = new DualGraph(global_min, global_max, level);    
+
+	if (!dual->loadDualFile(dual_fname)) {
+		if ((fp = fopen(ctree_fname, "r")) != NULL) {
+			fclose(fp);
+			p_actree = new AugmentedContourTree();
+			p_actree->load(ctree_fname);
+		} else {
+			float min, max;
+			p_fun->getFuncMinMax(min, max);
+			fprintf(stderr, "function min = %f, max = %f\n", min, max);
+
+			ContourTree *p_stree = p_vol->splitTree();
+			ContourTree *p_jtree = p_vol->joinTree();
+			ContourTree *p_tree = ContourTree::mergeTree(p_jtree, p_stree);
+			delete p_stree;
+			delete p_jtree;
+
+			p_actree = p_tree->augment();
+			delete p_tree;
+
+			printf("reducing contour tree ...\n");
+			p_actree->reduce();
+			//p_actree->print();
+			p_actree->done();
+			p_actree->dump(ctree_fname);
+		}
+		//float min, max;
+		//p_actree->getMinMax(min, max);
+		//fprintf(stderr, "func min = %f, max = %f\n", min, max);
+		//perturb min and max
+		//min -= (max-min)*0.000013;
+		//max += (max-min)*0.000013;
+		//min = global_min;
+		//max = global_max;
+		DualNode::setGlobalMinMax(global_min, global_max);
+		dual->build(p_vol, p_actree);
+		dual->dump(dual_fname);
+		delete p_actree;
+		//delete p_vol;
+		//delete p_pot;
+	}
+
+	MultiConTree *multicon = new MultiConTree(dual, p_vol->getVolume());
+//	delete p_vol;
+
+	return multicon;
+}
+
+
+

@@ -1,0 +1,7 @@
+spherefun.o spherefun.o: spherefun.cpp spherefun.h function.h geom.h
+
+spherefun.h:
+
+function.h:
+
+geom.h:

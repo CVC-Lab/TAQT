@@ -1,0 +1,18 @@
+------------------------------------------------
+|   CVC Hello World 1.0 - Build/Installation   |
+------------------------------------------------
+Joe R. -- transfix@ices.utexas.edu -- 01/26/2010
+
+To build:
+$ cd $BUILD_DIR
+$ cmake $SOURCE_DIR
+$ make
+
+BUILD_DIR - a location to place files generated during the build.
+            It can be the same as the SOURCE_DIR
+SOURCE_DIR - The location of the project's root CMakeLists.txt file.
+
+
+Once you've built the project, the binary will be in bin/ and any libraries
+created during the process will be in lib/.
+
