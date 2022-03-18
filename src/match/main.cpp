@@ -304,7 +304,7 @@ public:
 } executeClusterDCTMatch(&s);
 
 
-
+// PROGRAM ENTRY POINT FOR MATCH EXECUTABLE.
 int main(int argc, char *argv[])
 {
 #ifdef STANDALONE
@@ -316,6 +316,7 @@ int main(int argc, char *argv[])
         double start, end;
 	start = getTime();
 	
+	// I don't know what these are for. Seemingly some kinds of weights.
 	sim_w[0] = 0.03;
 	sim_w[1] = 0.08;
 	sim_w[2] = 0.44;
@@ -329,6 +330,7 @@ int main(int argc, char *argv[])
 	fprintf( stderr, "matching: %s %s\n", argv[1], argv[2]);
 
 	bool potential_data = false;
+	// Checks if first 9 characters of third argument and "-potential" match; checks if "-potential" is third argument.
 	if( !strncmp( argv[3], "-potential", 9 ) )
 		potential_data = true;
 
