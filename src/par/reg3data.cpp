@@ -22,6 +22,7 @@ static int bitsize(int i)
 Reg3Data::Reg3Data(const char* fname, int dim[3])
 {
 	m_dim[0] = m_dim[1] = m_dim[2] = 2;
+	// m_orig is declared in header.
 	m_orig[0] = m_orig[1] = m_orig[2] = 0;
 	m_span[0] = m_span[1] = m_span[2] = 1;
 	m_type = FLOAT_TYPE;
@@ -292,6 +293,7 @@ void Reg3Data::init()
 
 void Reg3Data::readFile(const char* fname)
 {
+	// Does the system support multiple file formats?
 	size_t len = strlen(fname);
 	if (len > 4 && strcmp(fname+len-4, ".r3d") == 0) {
 		readR3D(fname);
